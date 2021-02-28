@@ -894,6 +894,38 @@ done < "file"
 # Bash 4+
 mapfile -t file_data < "file"
 ```
+## Poor man's hexdump utility
+
+A less fancy version of the `hd` command.
+
+```shell
+#! /bin/bash
+
+set -euo pipefail
+
+LC_ALL=C
+IFS=$'\0'
+BASH_COMPAT=31
+
+for FILENAME; do
+    BYTES=()
+    exec 3< "$FILENAME"
+    while :; do
+        read -d $'\0' -r -n1 -u 3 || break
+        printf -vCH %02X "'$REPLY"
+        BYTES=(${BYTES[*]:-} $CH )
+        if [[ ${#BYTES[*]} -gt 15 ]]; then
+            echo ${BYTES[*]}
+            BYTES=()
+        fi
+    done
+    exec 3<&-
+    if [[ ${BYTES:-} ]]; then
+        echo ${BYTES[*]}
+    fi
+    break # parses only one file
+done
+```
 
 ## Get the first N lines of a file
 
